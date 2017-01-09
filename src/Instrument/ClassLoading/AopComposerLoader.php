@@ -154,16 +154,21 @@ class AopComposerLoader
         }
 
         $file = $this->original->findFile($class);
+        if ($file === false) {
+            return $file;
+        }
 
-        if ($file) {
-            $file = PathResolver::realpath($file)?:$file;
-            $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
-            if ($cacheState && $isProduction) {
-                $file = $cacheState['cacheUri'] ?: $file;
-            } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
-                // can be optimized here with $cacheState even for debug mode, but no needed right now
-                $file = FilterInjectorTransformer::rewrite($file);
-            }
+        if (!$isAllowedFilter(new \SplFileInfo($file))) {
+            return $file;
+        }
+
+        $file = PathResolver::realpath($file);
+        $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
+        if ($cacheState && $isProduction) {
+            $file = $cacheState['cacheUri'] ?: $file;
+        } else {
+            // can be optimized here with $cacheState even for debug mode, but no needed right now
+            $file = FilterInjectorTransformer::rewrite($file);
         }
 
         return $file;
